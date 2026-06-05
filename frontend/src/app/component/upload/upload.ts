@@ -2,22 +2,30 @@ import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { UploadService } from '../../services/upload.service';
+import { FormsModule } from '@angular/forms';
+import { ChatService } from '../../services/chat.service';
 @Component({
   selector: 'app-upload',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule,
+            FormsModule
+            ],
   templateUrl: './upload.html',
   styleUrl: './upload.css'
 })
 export class UploadComponent {
+  question='';
+  answer = '';
   selectedFile: File | null = null;
   message = '';
 
   columns:string[]=[];
   preview: Record<string,any>[]=[];
+  row_count: number=0;
 
   constructor(
-  private uploadService: UploadService
+  private uploadService: UploadService,
+  private chatService: ChatService
   ) {}
 
   onFileSelected(event: any): void {
@@ -36,6 +44,7 @@ export class UploadComponent {
         next: (response) => {
           this.preview = response.preview;
           this.columns = response.columns;
+          this.row_count=response.row_count
           this.message = 'File Uploaded successfully';
           console.log(this.message)
         },
@@ -44,6 +53,23 @@ export class UploadComponent {
           this.message = 'Upload failed';
         }
       });
+  }
+
+  askQuestion():void{
+    this.chatService
+    .askQuestion({
+      question:this.question
+    })
+    .subscribe({
+      next:(response)=>{
+        console.log(response);
+        this.answer=response.answer;
+      },
+      error:(error)=>{
+        console.log(error);
+      }
+      
+    })
   }
 }
 

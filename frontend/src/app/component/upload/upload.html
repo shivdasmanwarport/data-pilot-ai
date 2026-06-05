@@ -19,9 +19,48 @@
   </p>
 </div>
 
-<h3 *ngIf="preview.length > 0">
-  Dataset Preview
-</h3>
+<div *ngIf="columns.length > 0">
+
+  <h3>Dataset Summary</h3>
+
+  <p>
+    Rows: {{ row_count }}
+  </p>
+
+  <p>
+    Columns: {{ columns.length }}
+  </p>
+
+  <h4>Available Columns</h4>
+
+  <ul>
+    <li *ngFor="let col of columns">
+      {{ col }}
+    </li>
+  </ul>
+
+</div>
+
+<h3>Ask Questions About Dataset</h3>
+
+<input
+  type="text"
+  [(ngModel)]="question"
+  placeholder="Ask a question"
+/>
+
+<button (click)="askQuestion()">
+  Ask
+</button>
+<div *ngIf="answer">
+
+  <h3>Answer</h3>
+
+  <p>
+    {{ answer }}
+  </p>
+
+</div>
 
 <table *ngIf="preview.length > 0" border="1">
 
