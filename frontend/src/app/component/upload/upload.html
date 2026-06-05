@@ -1,0 +1,44 @@
+<div class="upload-container">
+  <h2>Upload Dataset</h2>
+
+  <input
+    type="file"
+    accept=".csv"
+    (change)="onFileSelected($event)"
+  />
+
+  <button
+    (click)="uploadFile()"
+    [disabled]="!selectedFile"
+  >
+    Upload
+  </button>
+
+  <p *ngIf="message">
+    {{ message }}
+  </p>
+</div>
+
+<h3 *ngIf="preview.length > 0">
+  Dataset Preview
+</h3>
+
+<table *ngIf="preview.length > 0" border="1">
+
+  <thead>
+    <tr>
+      <th *ngFor="let col of columns">
+        {{ col }}
+      </th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr *ngFor="let row of preview">
+      <td *ngFor="let col of columns">
+        {{ row[col] }}
+      </td>
+    </tr>
+  </tbody>
+
+</table>
