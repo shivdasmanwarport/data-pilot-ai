@@ -1,83 +1,175 @@
-<div class="upload-container">
-  <h2>Upload Dataset</h2>
+<div class="page">
+  <div class="container">
 
-  <input
-    type="file"
-    accept=".csv"
-    (change)="onFileSelected($event)"
-  />
+    <!-- Hero Section -->
+    <div class="hero">
+      <h1>📊 DataPilot AI</h1>
+      <p>
+        Upload CSV datasets, create MySQL tables, and explore your data using natural language.
+      </p>
+    </div>
 
-  <button
-    (click)="uploadFile()"
-    [disabled]="!selectedFile"
-  >
-    Upload
-  </button>
+    <!-- Upload Section -->
+    <div class="card">
+      <h2 class="section-title">📁 Upload Dataset</h2>
 
-  <p *ngIf="message">
-    {{ message }}
-  </p>
+      <div class="form-group">
+        <label for="fileInput">Select CSV File:</label>
+        <input
+          id="fileInput"
+          type="file"
+          accept=".csv"
+          (change)="onFileSelected($event)"
+          class="file-input"
+        />
+        <small *ngIf="selectedFile" class="file-info">
+          Selected: {{ selectedFile.name }} ({{ (selectedFile.size / 1024).toFixed(2) }} KB)
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="tableNameInput">Table Name:</label>
+        <input
+          id="tableNameInput"
+          type="text"
+          [(ngModel)]="tableName"
+          placeholder="e.g., customers, sales_data, products"
+          class="chat-input"
+          maxlength="64"
+        />
+        <small class="hint">Only letters, numbers, and underscores. Must start with a letter or underscore.</small>
+      </div>
+
+      <button
+        (click)="uploadFile()"
+        [disabled]="!selectedFile || !tableName || isLoading"
+        class="primary-button">
+        {{ isLoading ? '⏳ Uploading...' : '🚀 Upload Dataset' }}
+      </button>
+
+      <p
+        class="message"
+        [class.success]="message.includes('✅')"
+        [class.error]="message.includes('❌')"
+        *ngIf="message">
+        {{ message }}
+      </p>
+    </div>
+
+    <!-- Dataset Summary -->
+    <div
+      class="card"
+      *ngIf="columns.length > 0">
+      <h2 class="section-title">📊 Dataset Summary</h2>
+
+      <div class="stats">
+        <div class="stat-card">
+          <h3>{{ row_count | number }}</h3>
+          <p>Rows</p>
+        </div>
+        <div class="stat-card">
+          <h3>{{ columns.length }}</h3>
+          <p>Columns</p>
+        </div>
+        <div class="stat-card">
+          <h3>{{ uploadedTableName }}</h3>
+          <p>Table Name</p>
+        </div>
+      </div>
+
+      <h3 class="sub-heading">📋 Available Columns</h3>
+      <div class="columns-list">
+        <span
+          class="column-chip"
+          *ngFor="let col of columns">
+          {{ col }}
+        </span>
+      </div>
+
+      <button (click)="clearData()" class="secondary-button">
+        🗑️ Clear Data
+      </button>
+    </div>
+
+    <!-- Chat Section -->
+    <div
+      class="card"
+      *ngIf="columns.length > 0">
+      <h2 class="section-title">💬 Ask Questions</h2>
+
+      <div class="chat-container">
+        <input
+          class="chat-input"
+          type="text"
+          [(ngModel)]="question"
+          placeholder="e.g., How many rows? List columns, What is the average of salary?"
+          (keyup.enter)="askQuestion()"
+        />
+
+        <button
+          class="ask-button"
+          (click)="askQuestion()"
+          [disabled]="!question || isChatLoading">
+          {{ isChatLoading ? '⏳ Thinking...' : '🤔 Ask Question' }}
+        </button>
+      </div>
+
+      <div
+        class="answer-box"
+        *ngIf="answer">
+        <h3>💡 Answer</h3>
+        <div class="answer-content">
+          <p style="white-space: pre-line;">{{ answer }}</p>
+        </div>
+      </div>
+
+      <div class="example-questions">
+        <h4>📝 Example Questions:</h4>
+        <div class="example-chips">
+          <span class="example-chip" (click)="question = 'How many rows?'; askQuestion()">
+            How many rows?
+          </span>
+          <span class="example-chip" (click)="question = 'List all columns'; askQuestion()">
+            List all columns
+          </span>
+          <span class="example-chip" (click)="question = 'Summary statistics'; askQuestion()">
+            Summary statistics
+          </span>
+          <span class="example-chip" (click)="question = 'Show me the data preview'; askQuestion()">
+            Data preview
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dataset Preview -->
+    <div
+      class="card"
+      *ngIf="preview.length > 0">
+      <h2 class="section-title">🔍 Dataset Preview</h2>
+      <p class="preview-info">Showing first {{ preview.length }} rows</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th *ngFor="let col of columns">
+                {{ col }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of preview; let i = index">
+              <td class="row-number">{{ i + 1 }}</td>
+              <td *ngFor="let col of columns">
+                {{ row[col] !== null && row[col] !== undefined ? row[col] : '—' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
 </div>
-
-<div *ngIf="columns.length > 0">
-
-  <h3>Dataset Summary</h3>
-
-  <p>
-    Rows: {{ row_count }}
-  </p>
-
-  <p>
-    Columns: {{ columns.length }}
-  </p>
-
-  <h4>Available Columns</h4>
-
-  <ul>
-    <li *ngFor="let col of columns">
-      {{ col }}
-    </li>
-  </ul>
-
-</div>
-
-<h3>Ask Questions About Dataset</h3>
-
-<input
-  type="text"
-  [(ngModel)]="question"
-  placeholder="Ask a question"
-/>
-
-<button (click)="askQuestion()">
-  Ask
-</button>
-<div *ngIf="answer">
-
-  <h3>Answer</h3>
-
-  <p>
-    {{ answer }}
-  </p>
-
-</div>
-
-<table *ngIf="preview.length > 0" border="1">
-
-  <thead>
-    <tr>
-      <th *ngFor="let col of columns">
-        {{ col }}
-      </th>
-    </tr>
-  </thead>
-
-  <tbody>
-    <tr *ngFor="let row of preview">
-      <td *ngFor="let col of columns">
-        {{ row[col] }}
-      </td>
-    </tr>
-  </tbody>
-
-</table>
