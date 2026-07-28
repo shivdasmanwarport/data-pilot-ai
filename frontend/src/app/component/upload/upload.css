@@ -396,6 +396,228 @@ tbody tr:hover {
   margin-bottom: 16px;
 }
 
+/* Metadata Section */
+.metadata-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border: 2px solid #e2e8f0;
+}
+
+.subtitle {
+  color: #64748b;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.optional-badge {
+  display: inline-block;
+  background: #e2e8f0;
+  color: #475569;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.column-descriptions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.column-item {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.column-item:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.column-header {
+  margin-bottom: 12px;
+}
+
+.column-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.column-name strong {
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.column-type {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.sample-values {
+  color: #64748b;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+}
+
+.stats-badge {
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.description-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+  background: #f8fafc;
+}
+
+.description-input:focus {
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+.description-input::placeholder {
+  color: #94a3b8;
+}
+
+.prompt-section {
+  margin-top: 16px;
+}
+
+.prompt-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.2s;
+  background: #f8fafc;
+}
+
+.prompt-input:focus {
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+.create-table-button {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 28px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.create-table-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+.create-table-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Summary Cards */
+.summary-card {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+  border: 2px solid #bbf7d0;
+}
+
+.prompt-display {
+  margin: 16px 0;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border-left: 4px solid #3b82f6;
+}
+
+.prompt-display h4 {
+  margin: 0 0 8px 0;
+  color: #0f172a;
+}
+
+.prompt-display p {
+  margin: 0;
+  color: #334155;
+  font-style: italic;
+}
+
+.descriptions-summary {
+  margin: 16px 0;
+}
+
+.descriptions-summary h4 {
+  margin: 0 0 12px 0;
+  color: #0f172a;
+}
+
+.description-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+}
+
+.description-item:last-child {
+  border-bottom: none;
+}
+
+.description-item strong {
+  color: #1e293b;
+}
+
+/* Action Buttons */
+.action-buttons {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.danger-button {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.danger-button:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .hero {
@@ -420,5 +642,22 @@ tbody tr:hover {
   
   .stats {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .column-name {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .column-name strong {
+    font-size: 14px;
+  }
+  
+  .sample-values {
+    font-size: 12px;
+  }
+  
+  .description-input {
+    font-size: 13px;
   }
 }

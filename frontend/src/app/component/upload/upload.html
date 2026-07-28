@@ -5,12 +5,12 @@
     <div class="hero">
       <h1>📊 DataPilot AI</h1>
       <p>
-        Upload CSV datasets, create MySQL tables, and explore your data using natural language.
+        Upload CSV datasets, add column descriptions, and query your data using natural language.
       </p>
     </div>
 
     <!-- Upload Section -->
-    <div class="card">
+    <div class="card upload-card">
       <h2 class="section-title">📁 Upload Dataset</h2>
 
       <div class="form-group">
@@ -44,7 +44,7 @@
         (click)="uploadFile()"
         [disabled]="!selectedFile || !tableName || isLoading"
         class="primary-button">
-        {{ isLoading ? '⏳ Uploading...' : '🚀 Upload Dataset' }}
+        {{ isLoading ? '⏳ Uploading...' : '🚀 Upload CSV' }}
       </button>
 
       <p
@@ -56,11 +56,66 @@
       </p>
     </div>
 
+    <!-- Column Descriptions Section -->
+    <div
+      class="card metadata-card"
+      *ngIf="showColumnDescriptions && columnInfos.length > 0">
+      <h2 class="section-title">📝 Column Descriptions</h2>
+      <p class="subtitle">
+        Add descriptions for each column to help the AI understand your data better.
+        <span class="optional-badge">Optional</span>
+      </p>
+
+      <div class="column-descriptions">
+        <div *ngFor="let col of columnInfos; trackBy: trackByColumn" class="column-item">
+          <div class="column-header">
+            <div class="column-name">
+              <strong>{{ col.name }}</strong>
+              <span class="column-type">{{ col.type }}</span>
+              <span class="sample-values">
+                Sample: {{ col.sample_values.join(', ') }}
+              </span>
+              <span class="stats-badge">
+                Unique: {{ col.unique_count }} | Null: {{ col.null_count }}
+              </span>
+            </div>
+          </div>
+          <div class="column-description-input">
+            <input
+              type="text"
+              [(ngModel)]="col.description"
+              placeholder="Add description for this column (e.g., 'Customer ID - Unique identifier for each customer')"
+              class="description-input"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group prompt-section">
+        <label for="promptInput">Dataset Context / Prompt (Optional):</label>
+        <textarea
+          id="promptInput"
+          [(ngModel)]="userPrompt"
+          placeholder="Add context about your dataset, e.g., 'This dataset contains sales data from 2020-2023. Each row represents a sales transaction.'"
+          class="prompt-input"
+          rows="3"
+        ></textarea>
+        <small class="hint">This context will help the AI better understand your data and answer questions more accurately.</small>
+      </div>
+
+      <button
+        (click)="createTableWithMetadata()"
+        [disabled]="isCreatingTable"
+        class="create-table-button">
+        {{ isCreatingTable ? '⏳ Creating Table...' : '✅ Create Table with Metadata' }}
+      </button>
+    </div>
+
     <!-- Dataset Summary -->
     <div
-      class="card"
-      *ngIf="columns.length > 0">
-      <h2 class="section-title">📊 Dataset Summary</h2>
+      class="card summary-card"
+      *ngIf="tableCreated">
+      <h2 class="section-title">🎉 Table Created Successfully!</h2>
 
       <div class="stats">
         <div class="stat-card">
@@ -77,24 +132,24 @@
         </div>
       </div>
 
-      <h3 class="sub-heading">📋 Available Columns</h3>
-      <div class="columns-list">
-        <span
-          class="column-chip"
-          *ngFor="let col of columns">
-          {{ col }}
-        </span>
+      <div *ngIf="userPrompt" class="prompt-display">
+        <h4>📝 Dataset Context:</h4>
+        <p>{{ userPrompt }}</p>
       </div>
 
-      <button (click)="clearData()" class="secondary-button">
-        🗑️ Clear Data
-      </button>
+      <!-- Fixed: Use a method in component instead of arrow function -->
+      <div *ngIf="hasDescriptions()" class="descriptions-summary">
+        <h4>📋 Column Descriptions:</h4>
+        <div *ngFor="let col of columnInfos" class="description-item">
+          <strong>{{ col.name }}:</strong> {{ col.description || 'No description' }}
+        </div>
+      </div>
     </div>
 
     <!-- Chat Section -->
     <div
-      class="card"
-      *ngIf="columns.length > 0">
+      class="card chat-card"
+      *ngIf="tableCreated">
       <h2 class="section-title">💬 Ask Questions</h2>
 
       <div class="chat-container">
@@ -102,7 +157,7 @@
           class="chat-input"
           type="text"
           [(ngModel)]="question"
-          placeholder="e.g., How many rows? List columns, What is the average of salary?"
+          placeholder="Ask anything about your data..."
           (keyup.enter)="askQuestion()"
         />
 
@@ -110,7 +165,7 @@
           class="ask-button"
           (click)="askQuestion()"
           [disabled]="!question || isChatLoading">
-          {{ isChatLoading ? '⏳ Thinking...' : '🤔 Ask Question' }}
+          {{ isChatLoading ? '⏳ Thinking...' : '🤔 Ask' }}
         </button>
       </div>
 
@@ -124,19 +179,19 @@
       </div>
 
       <div class="example-questions">
-        <h4>📝 Example Questions:</h4>
+        <h4>📝 Suggested Questions:</h4>
         <div class="example-chips">
           <span class="example-chip" (click)="question = 'How many rows?'; askQuestion()">
             How many rows?
           </span>
-          <span class="example-chip" (click)="question = 'List all columns'; askQuestion()">
-            List all columns
+          <span class="example-chip" (click)="question = 'List columns with descriptions'; askQuestion()">
+            List columns with descriptions
           </span>
-          <span class="example-chip" (click)="question = 'Summary statistics'; askQuestion()">
+          <span class="example-chip" (click)="question = 'Show summary statistics'; askQuestion()">
             Summary statistics
           </span>
-          <span class="example-chip" (click)="question = 'Show me the data preview'; askQuestion()">
-            Data preview
+          <span class="example-chip" (click)="question = 'Explain the dataset'; askQuestion()">
+            Explain the dataset
           </span>
         </div>
       </div>
@@ -144,7 +199,7 @@
 
     <!-- Dataset Preview -->
     <div
-      class="card"
+      class="card preview-card"
       *ngIf="preview.length > 0">
       <h2 class="section-title">🔍 Dataset Preview</h2>
       <p class="preview-info">Showing first {{ preview.length }} rows</p>
@@ -169,6 +224,13 @@
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div *ngIf="tableCreated" class="action-buttons">
+      <button (click)="clearData()" class="danger-button">
+        🗑️ Clear All Data
+      </button>
     </div>
 
   </div>

@@ -4,39 +4,59 @@ import { CommonModule } from '@angular/common';
 import { UploadService } from '../../services/upload.service';
 import { FormsModule } from '@angular/forms';
 import { ChatService } from '../../services/chat.service';
+import { TableService } from '../../services/table.service';
+import { ColumnDescription } from '../../model/table-creation-request.model';
 
 @Component({
   selector: 'app-upload',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './upload.html',
-  styleUrl: './upload.css'
+  styleUrls: ['./upload.css']
 })
 export class UploadComponent {
-  question = '';
-  answer = '';
+  // File upload
   selectedFile: File | null = null;
   tableName = '';
   message = '';
   isLoading = false;
+  
+  // Column descriptions
+  columnInfos: any[] = [];
+  showColumnDescriptions = false;
+  isCreatingTable = false;
+  
+  // Chat
+  question = '';
+  answer = '';
   isChatLoading = false;
-
+  userPrompt = '';
+  
+  // Dataset info
   columns: string[] = [];
   preview: Record<string, any>[] = [];
   row_count = 0;
   uploadedTableName = '';
+  tableCreated = false;
 
   constructor(
     private uploadService: UploadService,
-    private chatService: ChatService
+    private chatService: ChatService,
+    private tableService: TableService
   ) {}
+
+  // Helper method for template
+  hasDescriptions(): boolean {
+    return this.columnInfos.some(c => c.description && c.description.trim() !== '');
+  }
 
   onFileSelected(event: any): void {
     this.selectedFile = event.target.files[0];
     if (this.selectedFile) {
-      // Auto-generate table name from filename
       const baseName = this.selectedFile.name.replace('.csv', '');
       this.tableName = baseName.replace(/[^a-zA-Z0-9_]/g, '_');
+      this.tableCreated = false;
+      this.columnInfos = [];
     }
   }
 
@@ -51,7 +71,6 @@ export class UploadComponent {
       return;
     }
 
-    // Validate table name
     const validTableName = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(this.tableName);
     if (!validTableName) {
       this.message = 'Table name can only contain letters, numbers, and underscores. Must start with a letter or underscore.';
@@ -70,14 +89,49 @@ export class UploadComponent {
         this.columns = response.columns;
         this.row_count = response.row_count;
         this.uploadedTableName = response.table_name;
+        this.columnInfos = response.column_info || [];
         this.message = `✅ ${response.message}`;
         this.isLoading = false;
+        this.showColumnDescriptions = true;
+        
         console.log('Upload successful:', response);
       },
       error: (error) => {
         console.error('Upload error:', error);
         this.message = `❌ Upload failed: ${error.error?.detail || 'Unknown error'}`;
         this.isLoading = false;
+      }
+    });
+  }
+
+  createTableWithMetadata(): void {
+    // Prepare column descriptions
+    const columnDescriptions: ColumnDescription[] = this.columnInfos.map(info => ({
+      column_name: info.name,
+      description: info.description || ''
+    }));
+
+    const request = {
+      table_name: this.tableName,
+      column_descriptions: columnDescriptions,
+      prompt: this.userPrompt || ''
+    };
+
+    this.isCreatingTable = true;
+    this.message = 'Creating table with metadata...';
+
+    this.tableService.createTableWithMetadata(request).subscribe({
+      next: (response) => {
+        this.message = `✅ ${response.message}`;
+        this.tableCreated = true;
+        this.isCreatingTable = false;
+        this.showColumnDescriptions = false;
+        console.log('Table created:', response);
+      },
+      error: (error) => {
+        console.error('Create table error:', error);
+        this.message = `❌ Failed to create table: ${error.error?.detail || 'Unknown error'}`;
+        this.isCreatingTable = false;
       }
     });
   }
@@ -115,6 +169,14 @@ export class UploadComponent {
     this.selectedFile = null;
     this.tableName = '';
     this.uploadedTableName = '';
-    this.message = 'Data cleared';
+    this.message = '';
+    this.columnInfos = [];
+    this.userPrompt = '';
+    this.tableCreated = false;
+    this.showColumnDescriptions = false;
+  }
+
+  trackByColumn(index: number, item: any): string {
+    return item.name;
   }
 }
