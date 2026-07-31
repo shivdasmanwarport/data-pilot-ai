@@ -3,6 +3,9 @@ from typing import List, Optional, Dict, Any
 
 class ChatRequest(BaseModel):
     question: str
+    table_name: Optional[str] = None
+    session_id: Optional[int] = None
+    user_id: Optional[int] = None
 
 class ColumnDescription(BaseModel):
     column_name: str
@@ -13,20 +16,19 @@ class TableCreationRequest(BaseModel):
     column_descriptions: List[ColumnDescription]
     prompt: Optional[str] = ""
 
-class UploadResponse(BaseModel):
-    success: bool
-    message: str
-    columns: List[str]
-    column_info: List[Dict[str, Any]]
-    preview: List[Dict[str, Any]]
-    row_count: int
+class SelectTableRequest(BaseModel):
     table_name: str
 
-class CreateTableResponse(BaseModel):
-    success: bool
-    message: str
+class SessionCreateRequest(BaseModel):
     table_name: str
-    row_count: int
-    column_count: int
-    column_descriptions: Dict[str, str]
-    prompt: Optional[str] = ""
+    user_id: Optional[int] = None
+    title: Optional[str] = None
+
+class SessionSelectRequest(BaseModel):
+    session_id: int
+
+class UserResponse(BaseModel):
+    id: int
+    display_name: str
+    email: str
+    avatar_initials: str

@@ -1,0 +1,6 @@
+:host {
+	display: block;
+	min-height: 100vh;
+	color: #e5e7eb;
+	font-family: 'Segoe UI Variable', 'Aptos', 'Trebuchet MS', sans-serif;
+}

@@ -121,7 +121,7 @@ export class UploadComponent {
     this.message = 'Creating table with metadata...';
 
     this.tableService.createTableWithMetadata(request).subscribe({
-      next: (response) => {
+      next: (response:any) => {
         this.message = `✅ ${response.message}`;
         this.tableCreated = true;
         this.isCreatingTable = false;

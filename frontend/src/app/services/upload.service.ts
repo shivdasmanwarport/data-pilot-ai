@@ -13,10 +13,6 @@ export class UploadService {
 
   uploadFile(formData: FormData, tableName: string): Observable<UploadResponse> {
     const params = new HttpParams().set('table_name', tableName);
-    return this.http.post<UploadResponse>(
-      this.apiUrl,
-      formData,
-      { params }
-    );
+    return this.http.post<UploadResponse>(this.apiUrl, formData, { params });
   }
 }

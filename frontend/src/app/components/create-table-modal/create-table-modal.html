@@ -1,0 +1,45 @@
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Create New Table</h2>
+      <button class="close-btn" (click)="closeModal()">×</button>
+    </div>
+
+    <!-- Step 1: Upload -->
+    <div *ngIf="!uploadSuccess" class="step">
+      <h3>Step 1: Upload CSV</h3>
+      <div class="form-group">
+        <label>Select CSV File</label>
+        <input type="file" accept=".csv" (change)="onFileSelected($event)" />
+      </div>
+      <div class="form-group">
+        <label>Table Name</label>
+        <input type="text" [(ngModel)]="tableName" placeholder="e.g., sales_data" />
+      </div>
+      <button (click)="uploadFile()" [disabled]="!selectedFile || !tableName || isUploading" class="btn-primary">
+        {{ isUploading ? 'Uploading...' : 'Upload' }}
+      </button>
+      <p *ngIf="uploadMessage" class="message" [class.success]="uploadMessage.includes('✅')" [class.error]="uploadMessage.includes('❌')">
+        {{ uploadMessage }}
+      </p>
+    </div>
+
+    <!-- Step 2: Metadata -->
+    <div *ngIf="uploadSuccess" class="step">
+      <h3>Step 2: Add Descriptions & Prompt</h3>
+      <div class="column-descriptions">
+        <div *ngFor="let col of columnInfos" class="column-item">
+          <label><strong>{{ col.name }}</strong> ({{ col.type }})</label>
+          <input type="text" [(ngModel)]="col.description" placeholder="Description (optional)" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Dataset Prompt (Optional)</label>
+        <textarea [(ngModel)]="userPrompt" placeholder="Add context about the dataset..." rows="3"></textarea>
+      </div>
+      <button (click)="createTable()" [disabled]="isCreating" class="btn-success">
+        {{ isCreating ? 'Creating...' : '✅ Create Table' }}
+      </button>
+    </div>
+  </div>
+</div>

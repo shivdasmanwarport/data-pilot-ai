@@ -1,0 +1,284 @@
+<div class="workspace-shell">
+  <aside class="sidebar">
+    <div class="brand-block">
+      <p class="eyebrow">DataPilot AI</p>
+      <h1>SQL Analyst</h1>
+      <p class="brand-copy">Chat with CSV-backed MySQL tables through clean, named sessions.</p>
+    </div>
+
+    <div class="tab-strip">
+      <button type="button" class="tab-button" [class.active]="sidebarView === 'sessions'" (click)="setSidebarView('sessions')">History</button>
+      <button type="button" class="tab-button" [class.active]="sidebarView === 'tables'" (click)="setSidebarView('tables')">Tables</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-head">
+        <span>{{ sidebarView === 'sessions' ? 'Sessions' : 'Created Tables' }}</span>
+        <span class="table-count">{{ sidebarView === 'sessions' ? sessions.length : tables.length }}</span>
+      </div>
+
+      <div class="table-list" *ngIf="sidebarView === 'tables' && tables.length; else tablesFallback">
+        <button
+          *ngFor="let table of tables"
+          type="button"
+          class="table-card"
+          [class.active]="table === activeTableName"
+          (click)="selectTable(table, { openSidebar: true })">
+          <span class="table-title">{{ table }}</span>
+          <span class="table-subtitle">Select table and see its sessions</span>
+        </button>
+      </div>
+      <ng-template #tablesFallback>
+        <div class="table-list" *ngIf="sidebarView === 'sessions' && sessions.length; else emptySidebarState">
+          <button
+            *ngFor="let session of sessions"
+            type="button"
+            class="session-card"
+            [class.active]="isActiveSession(session.id)"
+            (click)="openSession(session.id)">
+            <span class="table-title">{{ session.title }}</span>
+            <span class="table-subtitle">{{ session.table_name }}</span>
+            <span class="session-meta">{{ formatSessionTime(session.last_message_at || session.updated_at) }}</span>
+          </button>
+        </div>
+      </ng-template>
+      <ng-template #emptySidebarState>
+        <div class="empty-sidebar-card">
+          {{ sidebarView === 'sessions' ? 'No sessions yet. Pick a table and start a conversation.' : 'No tables yet. Start with Upload CSV.' }}
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="sidebar-footer">
+      <button type="button" class="danger-nav" (click)="clearAllData()">Clear Local Session</button>
+    </div>
+  </aside>
+
+  <main class="main-panel" [class.upload-mode]="workspaceMode === 'upload'">
+    <header class="topbar">
+      <div class="topbar-main">
+        <div>
+          <p class="eyebrow">Current Workspace</p>
+          <h2>{{ workspaceMode === 'upload' ? 'Upload and Prepare Data' : (activeSessionTitle || 'Session Ready') }}</h2>
+        </div>
+        <div class="topbar-actions">
+          <button class="primary-nav topbar-button" (click)="switchToUploadMode()">Upload CSV</button>
+          <button class="ghost-nav topbar-button" [disabled]="!activeTableName || isCreatingSession" (click)="createSessionForActiveTable()">New Session</button>
+        </div>
+      </div>
+      <div class="topbar-meta">
+        <span *ngIf="activeTableName">{{ activeTableName }}</span>
+        <span *ngIf="activeSessionId">Session #{{ activeSessionId }}</span>
+        <div class="profile-pill topbar-profile" *ngIf="currentUser">
+          <div class="profile-avatar">{{ currentUser.avatar_initials }}</div>
+          <div>
+            <strong>{{ currentUser.display_name }}</strong>
+            <span>{{ currentUser.email }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section *ngIf="workspaceMode === 'upload'" class="upload-workspace">
+      <div class="panel-hero">
+        <div>
+          <p class="eyebrow">Upload Flow</p>
+          <h2>Upload a CSV and map its meaning.</h2>
+          <p>Add optional column descriptions and a dataset prompt, then save the table and continue in chat.</p>
+        </div>
+        <div class="hero-tips">
+          <span>Step 1: choose file</span>
+          <span>Step 2: inspect columns</span>
+          <span>Step 3: save and chat</span>
+        </div>
+      </div>
+
+      <div class="upload-grid">
+        <div class="upload-card upload-setup-card">
+          <div class="card-heading">
+            <h3>1. Upload File</h3>
+            <span>{{ selectedFile ? selectedFile.name : 'No file selected' }}</span>
+          </div>
+
+          <label class="dropzone">
+            <input type="file" accept=".csv" (change)="onFileSelected($event)" />
+            <span>Choose CSV file</span>
+            <small>Only CSV files are supported</small>
+          </label>
+
+          <label class="field-block">
+            <span>Table name</span>
+            <input [(ngModel)]="tableName" placeholder="customers_2026" />
+          </label>
+
+          <button type="button" class="solid-button" [disabled]="!selectedFile || !tableName || isUploading" (click)="uploadFile()">
+            {{ isUploading ? 'Uploading...' : 'Inspect Columns' }}
+          </button>
+
+          <p *ngIf="uploadMessage" class="status-copy">{{ uploadMessage }}</p>
+        </div>
+
+        <div class="upload-card wide upload-detail-card" *ngIf="uploadSuccess">
+          <div class="card-heading">
+            <h3>2. Describe The Data</h3>
+            <span>{{ columnInfos.length }} columns</span>
+          </div>
+
+          <div class="metadata-list" [class.long-list]="columnInfos.length > 8">
+            <div class="metadata-item" *ngFor="let column of columnInfos">
+              <div class="metadata-head">
+                <div>
+                  <strong>{{ column.name }}</strong>
+                  <p>{{ column.type }} · Unique {{ column.unique_count }} · Null {{ column.null_count }}</p>
+                </div>
+                <span class="sample-chip">{{ column.sample_values.join(', ') || 'No sample values' }}</span>
+              </div>
+              <input [(ngModel)]="column.description" placeholder="What does this column mean?" />
+            </div>
+          </div>
+
+          <label class="field-block">
+            <span>Dataset prompt</span>
+            <textarea [(ngModel)]="userPrompt" rows="4" placeholder="Add any business context, assumptions, or definitions for follow-up questions."></textarea>
+          </label>
+
+          <div class="preview-block" *ngIf="previewData.length">
+            <div class="card-heading compact">
+              <h4>Preview</h4>
+              <span>{{ previewData.length }} sample rows</span>
+            </div>
+            <div class="preview-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th *ngFor="let column of previewColumns">{{ column }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of previewData">
+                    <td *ngFor="let column of previewColumns">{{ row[column] ?? '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="upload-actions">
+            <button type="button" class="ghost-button" (click)="resetUploadDraft(true)">Reset</button>
+            <button type="button" class="solid-button success" [disabled]="isCreating" (click)="createTable()">
+              {{ isCreating ? 'Saving...' : 'Done' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section *ngIf="workspaceMode === 'chat'" class="chat-workspace">
+      <header class="chat-header">
+        <div>
+          <p class="eyebrow">Active Table</p>
+          <h2>{{ activeTableName || 'Select a table to begin' }}</h2>
+          <p class="meta-line" *ngIf="activeTableName">
+            {{ activeTableRowCount | number }} rows · {{ activeColumns.length }} columns
+          </p>
+        </div>
+        <div class="header-note" *ngIf="activeTablePrompt">
+          <span>Dataset prompt</span>
+          <p>{{ activeTablePrompt }}</p>
+        </div>
+      </header>
+
+      <div class="chat-scroll-region">
+      <div class="messages" #messageContainer>
+        <div *ngIf="!activeTableName" class="empty-state">
+          <h3>No table selected</h3>
+          <p>Pick an existing table from the sidebar or upload a new CSV to start a chat.</p>
+        </div>
+
+        <div *ngIf="activeTableName && !chatHistory.length && !isLoading" class="empty-state compact">
+          <h3>Ask your first question</h3>
+          <p>The assistant will use your table metadata, stored history, and SQL generation to answer follow-up questions.</p>
+          <div class="suggestion-row">
+            <button type="button" class="suggestion-chip" (click)="useSuggestedQuestion('How many rows are in this table?')">How many rows are in this table?</button>
+            <button type="button" class="suggestion-chip" (click)="useSuggestedQuestion('List the columns and what they mean.')">List the columns and what they mean.</button>
+            <button type="button" class="suggestion-chip" (click)="useSuggestedQuestion('Which category appears most often?')">Which category appears most often?</button>
+          </div>
+        </div>
+
+        <article *ngFor="let msg of chatHistory" class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+          <div class="avatar">{{ msg.role === 'user' ? 'You' : 'AI' }}</div>
+          <div class="message-body">
+            <div class="message-meta">{{ msg.role === 'user' ? 'Question' : 'Answer' }}</div>
+            <div class="message-copy" [innerHTML]="formatMessage(msg.text)"></div>
+
+            <section class="result-card" *ngIf="msg.resultPayload as resultPayload">
+              <div class="result-card-head">
+                <div>
+                  <span class="result-kicker">Query Result</span>
+                  <h3>{{ getResultSummary(resultPayload) }}</h3>
+                </div>
+                <span class="result-badge" *ngIf="resultPayload.truncated">Preview</span>
+              </div>
+
+              <div class="result-scalar-grid" *ngIf="resultPayload.type === 'scalar'">
+                <div class="result-stat" *ngFor="let entry of getScalarEntries(resultPayload)">
+                  <span>{{ entry.label }}</span>
+                  <strong>{{ entry.value }}</strong>
+                </div>
+              </div>
+
+              <div class="result-table-wrap" *ngIf="resultPayload.type === 'table'">
+                <table class="result-table">
+                  <thead>
+                    <tr>
+                      <th *ngFor="let column of resultPayload.columns">{{ column }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of resultPayload.rows">
+                      <td *ngFor="let column of resultPayload.columns">{{ formatCellValue(row[column]) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p class="result-note" *ngIf="resultPayload.truncated">Showing a preview of the returned rows.</p>
+            </section>
+
+            <div class="message-stamp" *ngIf="msg.timestamp">{{ formatSessionTime(msg.timestamp) }}</div>
+
+            <div class="sql-block" *ngIf="msg.sqlQuery">
+              <div class="sql-label">Generated SQL</div>
+              <pre>{{ msg.sqlQuery }}</pre>
+            </div>
+          </div>
+        </article>
+
+        <article *ngIf="isLoading" class="message assistant pending">
+          <div class="avatar">AI</div>
+          <div class="message-body">
+            <div class="message-meta">Answer</div>
+            <div class="typing-line"></div>
+            <div class="typing-line short"></div>
+          </div>
+        </article>
+      </div>
+      </div>
+
+      <footer class="composer">
+        <div class="composer-shell">
+          <textarea
+            [(ngModel)]="newQuestion"
+            rows="1"
+            placeholder="Ask a question about the selected table..."
+            [disabled]="!activeTableName || isLoading || isSelectingTable || isCreatingSession"
+            (keyup.enter)="sendQuestion()"></textarea>
+          <button type="button" class="solid-button" [disabled]="!newQuestion.trim() || !activeTableName || isLoading || isSelectingTable || isCreatingSession" (click)="sendQuestion()">
+            {{ isLoading ? 'Working...' : 'Send' }}
+          </button>
+        </div>
+        <p class="composer-note">Each answer can include the exact SQL query used, and follow-up questions reuse recent history.</p>
+      </footer>
+    </section>
+  </main>
+</div>

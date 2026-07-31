@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
-import { UploadComponent } from './component/upload/upload';
+import { ChatComponent } from './components/chat/chat';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [UploadComponent],
+  imports: [ChatComponent],
   templateUrl: './app.html'
 })
 export class App {}
